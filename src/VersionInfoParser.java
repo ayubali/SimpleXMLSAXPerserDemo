@@ -7,9 +7,10 @@
  **/
 package org.stellar.luncher;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -27,6 +28,14 @@ public class VersionInfoParser extends DefaultHandler {
 	private String value = null;
 	private StringBuilder valueBuilder = new StringBuilder();
 	private VersionInfo versionInfo = null;
+	private static VersionInfoParser versionParser = new VersionInfoParser();
+
+	/**
+	 * @return the versionParser
+	 */
+	public static VersionInfoParser getVersionParser() {
+		return versionParser;
+	}
 
 	public VersionInfo Parse(String versionUrl) {
 		log.debug("Parsing version XML from :" + versionUrl);
@@ -36,16 +45,22 @@ public class VersionInfoParser extends DefaultHandler {
 					"org.xmlpull.v1.sax2.Driver");
 			SAXParserFactory factory = SAXParserFactory.newInstance();
 			SAXParser saxParser = factory.newSAXParser();
-			InputSource source = new InputSource(new FileInputStream(new File(
-					versionUrl)));
+
+			URL xmlUrl = new URL(versionUrl);
+			HttpURLConnection urlConnection = (HttpURLConnection) xmlUrl
+					.openConnection();
+			urlConnection.connect();
+			InputStream inputStream = urlConnection.getInputStream();
+
+			InputSource source = new InputSource(inputStream);
 			source.setEncoding("ISO-8859-1");
 			saxParser.parse(source, this);
-		} catch (NullPointerException nex) {
-			log.error("Parsing error: NullPointerException " + nex.getMessage());
-		} catch (IOException e) {
-			log.error("Parsing error: IOException " + e.getMessage());
-		} catch (Exception e) {
-			log.error("Parsing error: " + e.getMessage());
+		} catch (NullPointerException ex) {
+			log.error("Parsing error: NullPointerException " + ex.getMessage());
+		} catch (IOException ex) {
+			log.error("Parsing error: IOException " + ex.getMessage());
+		} catch (Exception ex) {
+			log.error("Parsing error: " + ex.getMessage());
 		}
 		return versionInfo;
 	}
